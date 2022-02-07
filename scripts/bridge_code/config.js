@@ -42,4 +42,6 @@ module.exports = {
     address: process.env.USER2_FROM,
   },
   proofApi: process.env.PROOF_API || "https://apis.matic.network/",
+  chain_rpc_url: "https://polygon-mumbai.infura.io/v3/85db4049c00b4783a425412807ff92e9",
+  matic_contract_addresss: "0x392C13cc2E696CBb95ac097708455367c97B4702"
 };

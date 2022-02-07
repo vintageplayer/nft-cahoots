@@ -1,5 +1,23 @@
+const config = require("./config");
+const Web3 = require("web3");
+// console.log(config.chain_rpc_url);
+const web3 = new Web3(config.chain_rpc_url);
+const ABI = require("./bridge.json")["abi"];
+// console.log(config.matic_contract_addresss);
+const CONTRACT_ADDRESS = config.matic_contract_addresss;
+const myContract = new web3.eth.Contract(ABI, CONTRACT_ADDRESS);
+
+let options = {
+    filter: {
+        value: [],
+    },
+    fromBlock: 0,
+};
+
 const { pos } = require("./config");
 const { getPOSClient, to, from } = require("./utils");
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 const execute = async () => {
     const client = await getPOSClient();
@@ -23,16 +41,19 @@ const execute = async () => {
     console.log("receipt", txReceipt);
 
     // Check if checkpoint is reached
-    const isCheckPointed = await client.isCheckPointed(
-        "0x3b970b3999e197f804b59ec56a173df8a2729f84666ec963728891f6148653ef"
-    );
+    while (await client.isCheckPointed(txHash) != true) {
+        console.log('Waiting for checkpoint. Sleeping for 1 min');
+        await sleep(60000);        
+    }
 
-    console.log(isCheckPointed);
+    // const isCheckPointed = await client.isCheckPointed(txHash);
+
+    // console.log(isCheckPointed);
 
     const erc20RootToken = client.erc20("0x0000000000000000000000000000000000000000", true);
 
     // exit the withdraw, happens in ethereum
-    result = await erc20RootToken.withdrawExit("0x3b970b3999e197f804b59ec56a173df8a2729f84666ec963728891f6148653ef");
+    result = await erc20RootToken.withdrawExit(txHash);
 
     txHash = await result.getTransactionHash();
     console.log("txHash", txHash);
@@ -49,3 +70,18 @@ execute()
     .finally((_) => {
         process.exit(0);
     });
+
+
+while (true) {
+    await sleep(100);
+    myContract.getPastEvents(
+        "TransferRequestPlaced",
+        {
+            fromBlock: let latest_block = await web3.eth.getBlockNumber(),
+            toBlock: "latest",
+        },
+        function (error, events) {
+            console.log(events);            
+        }
+    );
+};
